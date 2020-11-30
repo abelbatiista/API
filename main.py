@@ -1,5 +1,6 @@
 #IMPORTACIONES: MÓDULOS Y LIBRERÍAS
 import os, binascii
+import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import mysql.connector
@@ -1233,3 +1234,6 @@ def _logOut():
         return {
             "ERROR": "FASTAPI ERROR"
         }
+
+if __name__ == "__main__":
+    uvicorn.run(app, host='0.0.0.0')

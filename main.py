@@ -5,7 +5,6 @@ from fastapi import FastAPI
 #from fastapi.middleware.cors import CORSMiddleware
 import mysql.connector
 import pickle
-import datetime
 
 #GLOBALES
 LoGGEDIN = bool(False)
@@ -52,7 +51,7 @@ CreateDataBase()
 #CREACIÓN DE LA CONEXIÓN EN LA BASE DE DATOS
 def Connection():
     try:
-        myDB = mysql.connector.connect(host="localhost", user="root", password="ABel06032001", database="webfinaldatos")
+        myDB = mysql.connector.connect(host="localhost", user="root", password="ABel06032001", database="webfinadatos")
         return myDB
     except:
         print("ERROR")

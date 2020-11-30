@@ -1,11 +1,9 @@
 #IMPORTACIONES: MÓDULOS Y LIBRERÍAS
 import os, binascii
-import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import mysql.connector
 import pickle
-import datetime
 
 #GLOBALES
 LoGGEDIN = bool(False)
@@ -14,7 +12,6 @@ ASaP = int(0)
 
 #EXTRAS
 def load():
-
     if (os.path.exists('LoGGEDIN.txt')):
         global LoGGEDIN
         global TOkEN

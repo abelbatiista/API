@@ -11,7 +11,7 @@ import datetime
 LoGGEDIN = bool(False)
 TOkEN = None
 ASaP = int(0)
-"""
+
 #EXTRAS
 def load():
     if (os.path.exists('LoGGEDIN.txt')):
@@ -26,13 +26,15 @@ def load():
         else:
             LoGGEDIN = _variable[0]
             TOkEN = _variable[1]
+    else:
+        pass
 load()
 
 def save(a):
     _out = open('LoGGEDIN.txt', 'wb')
     pickle.dump(a, _out)
     _out.close()
-"""
+
 #CREACIÓN DE LA BASE DE DATOS MySQL
 def CreateDataBase():
     try:

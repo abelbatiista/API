@@ -13,20 +13,17 @@ ASaP = int(0)
 
 #EXTRAS
 def load():
-    if (os.path.exists('LoGGEDIN.txt')):
-        global LoGGEDIN
-        global TOkEN
-        _in = open('LoGGEDIN.txt', 'rb')
-        _variable = pickle.load(_in)
-        _in.close()
-        if (_variable == []):
-            LoGGEDIN = bool(False)
-            TOkEN = None
-        else:
-            LoGGEDIN = _variable[0]
-            TOkEN = _variable[1]
+    global LoGGEDIN
+    global TOkEN
+    _in = open('LoGGEDIN.txt', 'rb')
+    _variable = pickle.load(_in)
+    _in.close()
+    if (_variable == []):
+        LoGGEDIN = bool(False)
+        TOkEN = None
     else:
-        pass
+        LoGGEDIN = _variable[0]
+        TOkEN = _variable[1]
 load()
 
 def save(a):

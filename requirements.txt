@@ -1,0 +1,15 @@
+appdirs==1.4.4
+click==7.1.2
+distlib==0.3.1
+fastapi==0.62.0
+filelock==3.0.12
+gunicorn==20.0.4
+h11==0.11.0
+mysql-connector-python==8.0.22
+pickle-mixin==1.0.2
+protobuf==3.14.0
+pydantic==1.7.2
+six==1.15.0
+starlette==0.13.6
+uvicorn==0.12.3
+virtualenv==20.2.1

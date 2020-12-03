@@ -591,7 +591,7 @@ def _updatePatient(id: int, cedula: str, image: str, name: str, lastname: str, b
         LoGGEDIN = SAvED[0]
         TOkEN = SAvED[1]
         if (LoGGEDIN):
-            condicion = UpdatePatient(id, cedula, image, name, lastname, bloodtype, email, sex, birthdate, allergies, [0])
+            condicion = UpdatePatient(id, cedula, image, name, lastname, bloodtype, email, sex, birthdate, allergies, TOkEN[0])
             if (condicion != 0):
                 return {
                     "ID": id,

@@ -7,33 +7,10 @@ from fastapi import FastAPI
 import pickle
 
 #GLOBALES
-LoGGEDIN = bool(False)
-TOkEN = None
 ASaP = int(0)
-
-#EXTRAS
-def load():
-    global LoGGEDIN
-    global TOkEN
-    _in = open('LoGGEDIN.txt', 'rb')
-    _variable = pickle.load(_in)
-    _in.close()
-    if (_variable == []):
-        LoGGEDIN = bool(False)
-        TOkEN = None
-    else:
-        LoGGEDIN = _variable[0]
-        TOkEN = _variable[1]
-load()
-
-def save(a):
-    _out = open('LoGGEDIN.txt', 'wb')
-    pickle.dump(a, _out)
-    _out.close()
 
 #CREACIÓN DE LA CONEXIÓN EN LA BASE DE DATOS
 def Connection():
-    conexion = None
     try:
         conexion = sqlite3.connect("DATOS.db")
         return conexion
@@ -54,7 +31,7 @@ def InsertSignUpDoctor(username, email, password):
             myCursor.execute(sql, values)
             connection.commit()
         return 1
-    except:
+    except Error:
         return 0
 
 #MODIFICAR DATOS TABLA DOCTOR
@@ -67,7 +44,7 @@ def UpdateDoctor(column, value, id):
             myCursor.execute(sql)
             connection.commit()
         return 1
-    except:
+    except Error:
         return 0
 
 #SELECCIONAR DATOS INICIO DE SESIÓN.
@@ -85,8 +62,46 @@ def SelectLogInDoctor(email, password):
                 return [True, myResult]
             else:
                 return False
-    except:
+    except Error:
         return 0
+
+def TokenInception(iddoctor, TOkEN):
+    try:
+        sql = f"""UPDATE doctor SET token = "{TOkEN}" WHERE id = {iddoctor}"""
+        connection = Connection()
+        with connection:
+            myCursor = connection.cursor()
+            myCursor.execute(sql)
+            connection.commit()
+    except Error:
+        return 0
+
+def TokenReception():
+    try:
+        sql = f"""UPDATE doctor SET token = null"""
+        connection = Connection()
+        with connection:
+            myCursor = connection.cursor()
+            myCursor.execute(sql)
+            connection.commit()
+    except Error:
+        return 0
+
+def Verifying():
+    try:
+        sql = f"""SELECT * FROM doctor WHERE token != ''"""
+        connection = Connection()
+        with connection:
+            myCursor = connection.cursor()
+            myCursor.execute(sql)
+            myResult = myCursor.fetchone()
+            if (myResult != None):
+                myResult = list(myResult)
+                return [True, myResult]
+            else:
+                return [False, myResult]
+    except Error:
+        return [False, myResult]
 
 #TABLA PACIENTE
 
@@ -104,7 +119,7 @@ def InsertPatient(cedula, image, name, lastname, bloodtype, email, sex, birthdat
             connection.commit()
             id = myCursor.lastrowid
             return [1, id]
-    except:
+    except Error:
         return [0]
 
 #ACTUALIZACIÓN
@@ -118,7 +133,7 @@ def UpdatePatient(id, cedula, image, name, lastname, bloodtype, email, sex, birt
             myCursor.execute(sql, values)
             connection.commit()
             return 1
-    except:
+    except Error:
         return 0
 
 #ELIMINACIÓN
@@ -131,7 +146,7 @@ def DeletePatient(id):
             myCursor.execute(sql)
             connection.commit()
             return 1
-    except:
+    except Error:
         return 0
 
 #SELECCIÓN
@@ -144,7 +159,7 @@ def SelectPatient(id, iddoctor):
             myCursor.execute(sql)
             myResult = myCursor.fetchone()
             return [1, myResult]
-    except:
+    except Error:
         return [0]
 
 #SELECCIÓN NOMBRE PACIENTES
@@ -157,7 +172,7 @@ def SelectPatientsName(iddoctor):
             myCursor.execute(sql)
             myResult = myCursor.fetchall()
             return [1, myResult]
-    except:
+    except Error:
         return 0
 
 #BUSCAR ID DEL PACIENTE
@@ -171,7 +186,7 @@ def SearchPatientID(name, iddoctor):
             myResult = myCursor.fetchone()
             myResult = myResult[0]
             return [1, myResult]
-    except:
+    except Error:
         return [0]
 
 #TABLA VISITA
@@ -188,7 +203,7 @@ def InsertConsult(idpatient, date, consultreason, securitynumber, amount, diagno
             connection.commit()
             id = myCursor.lastrowid
             return [1, id]
-    except:
+    except Error:
         return [0]
 
 #ACTUALIZACIÓN
@@ -202,7 +217,7 @@ def UpdateConsult(id, idpatient, date, consultreason, securitynumber, amount, di
             myCursor.execute(sql, values)
             connection.commit()
             return 1
-    except:
+    except Error:
         return 0
 
 #ELIMINACIÓN
@@ -215,7 +230,7 @@ def DeleteConsult(id):
             myCursor.execute(sql)
             connection.commit()
             return 1
-    except:
+    except Error:
         return 0
 
 #SELECCIÓN
@@ -236,7 +251,7 @@ def SelectConsult(id, iddoctor):
             myCursor.execute(sql)
             myResult = myCursor.fetchone()
             return [1, myResult]
-    except:
+    except Error:
         return [0]
 
 #MÉTODOS ESPECIALES
@@ -263,7 +278,7 @@ def SELECT(tabla):
             myCursor.execute(sql)
             myResult = myCursor.fetchall()
             return [1, myResult]
-    except:
+    except Error:
         return [0]
 
 #SELECCIÓN PACIENTES POR DOCTOR
@@ -276,7 +291,7 @@ def SELECTpatient(iddoctor):
             myCursor.execute(sql)
             myResult = myCursor.fetchall()
             return [1, myResult]
-    except:
+    except Error:
         return [0]
 
 #SELECCIÓN CONSULTAS POR DOCTOR
@@ -296,7 +311,7 @@ def SELECTconsult(iddoctor):
             myCursor.execute(sql)
             myResult = myCursor.fetchall()
             return [1, myResult]
-    except:
+    except Error:
         return [0]
 
 #REPORTES
@@ -319,7 +334,7 @@ def ConsultsByDate(date, iddoctor):
             myCursor.execute(sql)
             myResult = myCursor.fetchall()
             return [1, myResult]
-    except:
+    except Error:
         return [0]
 
 #REPORTE ZODIACAL
@@ -332,7 +347,7 @@ def Zodiacal(iddoctor):
             myCursor.execute(sql)
             myResult = myCursor.fetchall()
             return [1, myResult]
-    except:
+    except Error:
         return [0]
 
 #REPORTE POR CANDITDAD DE VISITAS
@@ -345,7 +360,7 @@ def ConsultsQuantity(iddoctor):
             myCursor.execute(sql)
             myResult = myCursor.fetchall()
             return [1, myResult]
-    except:
+    except Error:
         return [0]
 
 #CREACION DEL OBJETO APP
@@ -366,6 +381,9 @@ app.add_middleware(
 @app.get("/")
 def read_root():
     try:
+        SAvED = Verifying()
+        LoGGEDIN = SAvED[0]
+        TOkEN = SAvED[1]
         if (LoGGEDIN):
             return {
                 "LogIn": LoGGEDIN,
@@ -384,6 +402,7 @@ def read_root():
 @app.get("/signUpDoctor/{username},{email},{password}")
 def _signUpDoctor(username: str, email: str, password: str):
     try:
+        LoGGEDIN = Verifying()[0]
         if (not LoGGEDIN):
             condicion = InsertSignUpDoctor(username, email, password)
             if (condicion != 0):
@@ -410,16 +429,15 @@ def _signUpDoctor(username: str, email: str, password: str):
 @app.get("/logInDoctor/{email},{password}")
 def _logInDoctor(email: str, password: str):
     try:
-        global LoGGEDIN
-        global TOkEN
+        SAvED = Verifying()
+        LoGGEDIN = SAvED[0]
         if (not LoGGEDIN):
             condicion = SelectLogInDoctor(email, password)
             if (condicion[0] != 0):
                 if (condicion[0]):
                     LoGGEDIN = True
                     TOkEN = [binascii.b2a_hex(os.urandom(10)), condicion[1]]
-                    array = [LoGGEDIN, TOkEN]
-                    save(array)
+                    TokenInception(condicion[1][0], binascii.b2a_hex(os.urandom(10)))
                     return {
                         "LogIn": LoGGEDIN,
                         "Token": TOkEN
@@ -446,14 +464,13 @@ def _logInDoctor(email: str, password: str):
 @app.get("/updateDoctor/username/{username}")
 def _updateDoctorUsername(username: str):
     try:
-        global TOkEN
+        SAvED = Verifying()
+        LoGGEDIN = SAvED[0]
+        TOkEN = SAvED[1]
         if (LoGGEDIN):
             column = "username"
-            condicion = UpdateDoctor(column, username, TOkEN[1][0])
+            condicion = UpdateDoctor(column, username, TOkEN[0])
             if (condicion != 0):
-                TOkEN[1][1] = username
-                array = [LoGGEDIN, TOkEN]
-                save(array)
                 return {
                     "NewUsername": username
                 }
@@ -474,14 +491,13 @@ def _updateDoctorUsername(username: str):
 @app.get("/updateDoctor/email/{email}")
 def _updateDoctorEmail(email: str):
     try:
-        global TOkEN
+        SAvED = Verifying()
+        LoGGEDIN = SAvED[0]
+        TOkEN = SAvED[1]
         if (LoGGEDIN):
             column = "email"
-            condicion = UpdateDoctor(column, email, TOkEN[1][0])
+            condicion = UpdateDoctor(column, email, TOkEN[0])
             if (condicion != 0):
-                TOkEN[1][2] = email
-                array = [LoGGEDIN, TOkEN]
-                save(array)
                 #return dict(NewEmail=email)
                 return {
                     "NewEmail": email
@@ -503,14 +519,13 @@ def _updateDoctorEmail(email: str):
 @app.get("/updateDoctor/password/{password}")
 def _updateDoctorPassword(password: str):
     try:
-        global TOkEN
+        SAvED = Verifying()
+        LoGGEDIN = SAvED[0]
+        TOkEN = SAvED[1]
         if (LoGGEDIN):
             column = "password"
-            condicion = UpdateDoctor(column, password, TOkEN[1][0])
+            condicion = UpdateDoctor(column, password, TOkEN[0])
             if (condicion != 0):
-                TOkEN[1][3] = password
-                array = [LoGGEDIN, TOkEN]
-                save(array)
                 return {
                     "NewPassword": password
                 }
@@ -531,17 +546,20 @@ def _updateDoctorPassword(password: str):
 @app.get("/insertPatient/{cedula},{image},{name},{lastname},{bloodtype},{email},{sex},{birthdate},{allergies}")
 def _insertPatient(cedula: str, image: str, name: str, lastname: str, bloodtype: str, email: str, sex: str, birthdate: str, allergies: str):
     try:
+        SAvED = Verifying()
+        LoGGEDIN = SAvED[0]
+        TOkEN = SAvED[1]
         if (LoGGEDIN):
-            condicion = InsertPatient(cedula, image, name, lastname, bloodtype, email, sex, birthdate, allergies, TOkEN[1][0])
+            condicion = InsertPatient(cedula, image, name, lastname, bloodtype, email, sex, birthdate, allergies, TOkEN[0])
             if (condicion[0] != 0):
                 id = condicion[1]
                 #FOR THE NEXT TIME return dict(ID=id, Cedula=cedula, Image=image, Name=name, Lastname=lastname, Bloodtype=bloodtype, Email=email, Sex=sex, Birthdate=birthdate, Allergies=allergies)
                 return {
                     "ID": id,
                     "Doctor": {
-                        "ID": TOkEN[1][0],
-                        "Username": TOkEN[1][1],
-                        "Email": TOkEN[1][2]
+                        "ID": TOkEN[0],
+                        "Username": TOkEN[1],
+                        "Email": TOkEN[2]
                     },
                     "Cedula": cedula,
                     "Image": image,
@@ -570,15 +588,18 @@ def _insertPatient(cedula: str, image: str, name: str, lastname: str, bloodtype:
 @app.get("/updatePatient/{id},{cedula},{image},{name},{lastname},{bloodtype},{email},{sex},{birthdate},{allergies}")
 def _updatePatient(id: int, cedula: str, image: str, name: str, lastname: str, bloodtype: str, email: str, sex: str, birthdate: str, allergies: str):
     try:
+        SAvED = Verifying()
+        LoGGEDIN = SAvED[0]
+        TOkEN = SAvED[1]
         if (LoGGEDIN):
-            condicion = UpdatePatient(id, cedula, image, name, lastname, bloodtype, email, sex, birthdate, allergies, TOkEN[1][0])
+            condicion = UpdatePatient(id, cedula, image, name, lastname, bloodtype, email, sex, birthdate, allergies, [0])
             if (condicion != 0):
                 return {
                     "ID": id,
                     "Doctor": {
-                        "ID": TOkEN[1][0],
-                        "Username": TOkEN[1][1],
-                        "Email": TOkEN[1][2]
+                        "ID": TOkEN[0],
+                        "Username": TOkEN[1],
+                        "Email": TOkEN[2]
                     },
                     "Cedula": cedula,
                     "Image": image,
@@ -607,6 +628,7 @@ def _updatePatient(id: int, cedula: str, image: str, name: str, lastname: str, b
 @app.get("/deletePatient/{id}")
 def _deletePatient(id: int):
     try:
+        LoGGEDIN = Verifying()[0]
         if (LoGGEDIN):
             condicion = DeletePatient(id)
             if (condicion != 0):
@@ -630,16 +652,19 @@ def _deletePatient(id: int):
 @app.get("/selectPatient/{id}")
 def _selectPatient(id: int):
     try:
+        SAvED = Verifying()
+        LoGGEDIN = SAvED[0]
+        TOkEN = SAvED[1]
         if (LoGGEDIN):
-            condicion = SelectPatient(id, TOkEN[1][0])
+            condicion = SelectPatient(id, TOkEN[0])
             if (condicion[0] != 0):
                 array = condicion[1]
                 return {
                     "ID": array[0],
                     "Doctor": {
                         "ID": array[1],
-                        "Username": TOkEN[1][1],
-                        "Email": TOkEN[1][2]
+                        "Username": TOkEN[1],
+                        "Email": TOkEN[2]
                     },
                     "Cedula": array[2],
                     "Image": array[3],
@@ -668,37 +693,45 @@ def _selectPatient(id: int):
 @app.get("/selectPatient")
 def _selectPatient():
     try:
+        SAvED = Verifying()
+        LoGGEDIN = SAvED[0]
+        TOkEN = SAvED[1]
         global ASaP
-        condicion = SELECTpatient(TOkEN[1][0])
-        if (condicion[0] != 0):
-            ASaP = int(0)
-            dictionary = {}
-            array = condicion[1]
-            for k in array:
-                dictionary.update({
-                    f"Patient{ASaP}": {
-                        "ID": k[0],
-                        "Doctor": {
-                            "ID": k[1]
-                        },
-                        "Cedula": k[2],
-                        "Image": k[3],
-                        "Name": k[4],
-                        "Lastname": k[5],
-                        "Bloodtype": k[6],
-                        "Email": k[7],
-                        "Sex": k[8],
-                        "Birthdate": k[9],
-                        "Allergies": k[10]
-                    }
-                })
-                ASaP += 1
-            return {
-                "Patients": dictionary
-            }
+        if (LoGGEDIN):
+            condicion = SELECTpatient(TOkEN[0])
+            if (condicion[0] != 0):
+                ASaP = int(0)
+                dictionary = {}
+                array = condicion[1]
+                for k in array:
+                    dictionary.update({
+                        f"Patient{ASaP}": {
+                            "ID": k[0],
+                            "Doctor": {
+                                "ID": k[1]
+                            },
+                            "Cedula": k[2],
+                            "Image": k[3],
+                            "Name": k[4],
+                            "Lastname": k[5],
+                            "Bloodtype": k[6],
+                            "Email": k[7],
+                            "Sex": k[8],
+                            "Birthdate": k[9],
+                            "Allergies": k[10]
+                        }
+                    })
+                    ASaP += 1
+                return {
+                    "Patients": dictionary
+                }
+            else:
+                return {
+                    "ERROR": "ERROR IN DATABASE"
+                }
         else:
             return {
-                "ERROR": "ERROR IN DATABASE"
+                "LogIn": LoGGEDIN
             }
     except:
         return {
@@ -709,9 +742,12 @@ def _selectPatient():
 @app.get("/selectPatientsName")
 def _selectPatientsName():
     try:
+        SAvED = Verifying()
+        LoGGEDIN = SAvED[0]
+        TOkEN = SAvED[1]
         global ASaP
         if (LoGGEDIN):
-            condicion = SelectPatientsName(TOkEN[1][0])
+            condicion = SelectPatientsName(TOkEN[0])
             if (condicion[0] != 0):
                 dictionary = {}
                 array = condicion[1]
@@ -738,8 +774,11 @@ def _selectPatientsName():
 @app.get("/insertConsult/{namepatient},{date},{consultreason},{securitynumber},{amount},{diagnosis},{note},{image}")
 def _insertConsult(namepatient: str, date: str, consultreason: str, securitynumber: str, amount: float, diagnosis: str, note: str, image: str):
     try:
+        SAvED = Verifying()
+        LoGGEDIN = SAvED[0]
+        TOkEN = SAvED[1]
         if (LoGGEDIN):
-            condicionID = SearchPatientID(namepatient, TOkEN[1][0])
+            condicionID = SearchPatientID(namepatient, TOkEN[0])
             if (condicionID[0] != 0):
                 idpatient = condicionID[1]
                 condicion = InsertConsult(idpatient, date, consultreason, securitynumber, amount, diagnosis, note, image)
@@ -780,8 +819,11 @@ def _insertConsult(namepatient: str, date: str, consultreason: str, securitynumb
 @app.get("/updateConsult/{id},{namepatient},{date},{consultreason},{securitynumber},{amount},{diagnosis},{note},{image}")
 def _updateConsult(id: int, namepatient: str, date: str, consultreason: str, securitynumber: str, amount: float, diagnosis: str, note: str, image: str):
     try:
+        SAvED = Verifying()
+        LoGGEDIN = SAvED[0]
+        TOkEN = SAvED[1]
         if (LoGGEDIN):
-            condicionID = SearchPatientID(namepatient, TOkEN[1][0])
+            condicionID = SearchPatientID(namepatient, TOkEN[0])
             if (condicionID[0] != 0):
                 idpatient = condicionID[1]
                 condicion = UpdateConsult(id, idpatient, date, consultreason, securitynumber, amount, diagnosis, note, image)
@@ -821,6 +863,7 @@ def _updateConsult(id: int, namepatient: str, date: str, consultreason: str, sec
 @app.get("/deleteConsult/{id}")
 def _deleteConsult(id: int):
     try:
+        LoGGEDIN = Verifying()[0]
         if (LoGGEDIN):
             condicion = DeleteConsult(id)
             if (condicion != 0):
@@ -844,8 +887,11 @@ def _deleteConsult(id: int):
 @app.get("/selectConsult/{id}")
 def _selectConsult(id: int):
     try:
+        SAvED = Verifying()
+        LoGGEDIN = SAvED[0]
+        TOkEN = SAvED[1]
         if (LoGGEDIN):
-            condicion = SelectConsult(id, TOkEN[1][0])
+            condicion = SelectConsult(id, TOkEN[0])
             if (condicion[0] != 0):
                 array = condicion[1]
                 return {
@@ -879,7 +925,10 @@ def _selectConsult(id: int):
 def _selectConsult():
     try:
         global ASaP
-        condicion = SELECTconsult(TOkEN[1][0])
+        SAvED = Verifying()
+        LoGGEDIN = SAvED[0]
+        TOkEN = SAvED[1]
+        condicion = SELECTconsult(TOkEN[0])
         if (condicion[0] != 0):
             ASaP = int(0)
             dictionary = {}
@@ -918,8 +967,11 @@ def _selectConsult():
 def _consultsByDate(date: str):
     try:
         global ASaP
+        SAvED = Verifying()
+        LoGGEDIN = SAvED[0]
+        TOkEN = SAvED[1]
         if (LoGGEDIN):
-            condicion = ConsultsByDate(date, TOkEN[1][0])
+            condicion = ConsultsByDate(date, TOkEN[0])
             if (condicion[0] != 0):
                 ASaP = int(0)
                 dictionary = {}
@@ -961,9 +1013,12 @@ def _consultsByDate(date: str):
 @app.get("/zodiacal")
 def _zodiacal():
     try:
+        SAvED = Verifying()
+        LoGGEDIN = SAvED[0]
+        TOkEN = SAvED[1]
         global ASaP
         if (LoGGEDIN):
-            condicion = Zodiacal(TOkEN[1][0])
+            condicion = Zodiacal(TOkEN[0])
             if (condicion[0] != 0):
                 ASaP = int(0)
                 dictionary = {}
@@ -1003,8 +1058,11 @@ def _zodiacal():
 def _consultsQuantity():
     try:
         global ASaP
+        SAvED = Verifying()
+        LoGGEDIN = SAvED[0]
+        TOkEN = SAvED[1]
         if (LoGGEDIN):
-            condicion = ConsultsQuantity(TOkEN[1][0])
+            condicion = ConsultsQuantity(TOkEN[0])
             if (condicion[0] != 0):
                 ASaP = int(0)
                 dictionary = {}
@@ -1038,7 +1096,6 @@ def _consultsQuantity():
 @app.get("/doctor")
 def _doctor():
     try:
-        global ASaP
         condicion = SELECT("doctor")
         if (condicion[0] != 0):
             ASaP = int(0)
@@ -1150,13 +1207,11 @@ def _consult():
 @app.get("/logOut")
 def _logOut():
     try:
-        global LoGGEDIN
-        global TOkEN
+        SAvED = Verifying()
+        LoGGEDIN = SAvED[0]
+        TOkEN = SAvED[1]
         if (LoGGEDIN):
-            LoGGEDIN = False
-            TOkEN = None
-            array = [LoGGEDIN, TOkEN]
-            save(array)
+            TokenReception()
             return {
                 "LogOut": True
             }

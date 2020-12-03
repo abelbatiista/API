@@ -1,10 +1,11 @@
 #IMPORTACIONES: MÓDULOS Y LIBRERÍAS
 import os, binascii
-import uvicorn
+import sqlite3
+from sqlite3 import Error
 from fastapi import FastAPI
-#from fastapi.middleware.cors import CORSMiddleware
-import mysql.connector
+from fastapi.middleware.cors import CORSMiddleware
 import pickle
+from datetime import date
 
 #GLOBALES
 LoGGEDIN = bool(False)
@@ -31,58 +32,41 @@ def save(a):
     pickle.dump(a, _out)
     _out.close()
 
-#CREACIÓN DE LA BASE DE DATOS MySQL
-def CreateDataBase():
-    try:
-        databases = []
-        myDB = mysql.connector.connect(host="localhost", user="root", password="ABel06032001")
-        myCursor = myDB.cursor()
-        myCursor.execute("SHOW DATABASES")
-        for k in myCursor:
-            databases.append(k)
-        myCursor.execute("CREATE DATABASE IF NOT EXISTS WebFinalDatos")
-    except:
-        print("ERROR")
-CreateDataBase()
-
 #CREACIÓN DE LA CONEXIÓN EN LA BASE DE DATOS
 def Connection():
+    conexion = None
     try:
-        myDB = mysql.connector.connect(host="localhost", user="root", password="ABel06032001", database="webfinaldatos")
-        return myDB
-    except:
-        print("ERROR")
+        conexion = sqlite3.connect("DATOS.db")
+        return conexion
+    except Error:
+        return 0
+    return conexion
 
 #TABLA DOCTOR
-
-#CREACIÓN DE LA TABLA "doctor"
-def CreateDoctorTable():
-    try:
-        connection = Connection()
-        myCursor = connection.cursor()
-        sql = """
-                            CREATE TABLE IF NOT EXISTS doctor(
-                                id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                                username VARCHAR(100) NOT NULL,
-                                email VARCHAR(200) NOT NULL,
-                                password VARCHAR(200) NOT NULL,
-                                CONSTRAINT CONST_UNIQUE_DOCTOR UNIQUE (username, email)                          
-                            );
-        """
-        myCursor.execute(sql)
-    except:
-        print("ERROR")
-CreateDoctorTable()
 
 #REGITRAR DATOS, INSERCIÓN
 def InsertSignUpDoctor(username, email, password):
     try:
-        connection = Connection()
-        myCursor = connection.cursor()
-        sql = """INSERT INTO doctor (username, email, password) VALUES (%s, %s, %s)"""
+        sql = """INSERT INTO doctor (username, email, password) VALUES (?, ?, ?)"""
         values = (username, email, password)
-        myCursor.execute(sql, values)
-        connection.commit()
+        connection = Connection()
+        with connection:
+            myCursor = connection.cursor()
+            myCursor.execute(sql, values)
+            connection.commit()
+        return 1
+    except:
+        return 0
+
+#MODIFICAR DATOS TABLA DOCTOR
+def UpdateDoctor(column, value, id):
+    try:
+        sql = f"""UPDATE doctor SET {column} = '{value}' WHERE id = {id}"""
+        connection = Connection()
+        with connection:
+            myCursor = connection.cursor()
+            myCursor.execute(sql)
+            connection.commit()
         return 1
     except:
         return 0
@@ -90,209 +74,154 @@ def InsertSignUpDoctor(username, email, password):
 #SELECCIONAR DATOS INICIO DE SESIÓN.
 def SelectLogInDoctor(email, password):
     try:
+        sql = f"""SELECT * FROM doctor WHERE email = ? AND password = ?"""
         connection = Connection()
-        myCursor = connection.cursor()
-        sql = f"""SELECT * FROM doctor WHERE email = %s AND password = %s"""
-        values = (email, password)
-        myCursor.execute(sql, values)
-        myResult = myCursor.fetchone()
-        myResult = list(myResult)
-        if (myResult != None):
-            return [True, myResult]
-        else:
-            return False
-    except:
-        return 0
-
-#MODIFICAR DATOS TABLA DOCTOR
-def UpdateDoctor(column, value, id):
-    try:
-        connection = Connection()
-        myCursor = connection.cursor()
-        sql = f"""UPDATE doctor SET {column} = '{value}' WHERE id = {id}"""
-        myCursor.execute(sql)
-        connection.commit()
-        return 1
+        with connection:
+            myCursor = connection.cursor()
+            values = (email, password)
+            myCursor.execute(sql, values)
+            myResult = myCursor.fetchone()
+            myResult = list(myResult)
+            if (myResult != None):
+                return [True, myResult]
+            else:
+                return False
     except:
         return 0
 
 #TABLA PACIENTE
 
-#CREACIÓN DE LA TABLA "paciente"
-def CreatePatientTable():
-    try:
-        connection = Connection()
-        myCursor = connection.cursor()
-        sql = """
-                            CREATE TABLE IF NOT EXISTS patient (
-                                id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                                iddoctor INT NOT NULL,
-                                cedula VARCHAR(100) NOT NULL,
-                                image LONGBLOB NOT NULL,
-                                name VARCHAR(100) NOT NULL,
-                                lastname VARCHAR(100) NOT NULL,
-                                bloodtype VARCHAR(100) NOT NULL,
-                                email VARCHAR(200) NOT NULL,
-                                sex VARCHAR(100) NOT NULL,
-                                birthdate DATE NOT NULL,
-                                allergies VARCHAR(200) NOT NULL,
-                                CONSTRAINT CONST_UNIQUE_DOCTOR UNIQUE (cedula, email),
-                                FOREIGN KEY (iddoctor) REFERENCES doctor(id)                     
-                            );
-        """
-        myCursor.execute(sql)
-    except:
-        print("ERROR")
-CreatePatientTable()
-
 #INSERCIÓN
 def InsertPatient(cedula, image, name, lastname, bloodtype, email, sex, birthdate, allergies, iddoctor):
     try:
-        connection = Connection()
-        myCursor = connection.cursor()
         sql = """INSERT INTO patient (cedula, image, name, lastname, bloodtype, email, sex, birthdate, allergies, iddoctor) 
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
-        values = (cedula, image, name, lastname, bloodtype, email, sex, birthdate, allergies, iddoctor)
-        myCursor.execute(sql, values)
-        connection.commit()
-        id = myCursor.lastrowid
-        return [1, id]
+        connection = Connection()
+        with connection:
+            myCursor = connection.cursor()
+            values = (cedula, image, name, lastname, bloodtype, email, sex, birthdate, allergies, iddoctor)
+            myCursor.execute(sql, values)
+            connection.commit()
+            id = myCursor.lastrowid
+            return [1, id]
     except:
         return [0]
 
 #ACTUALIZACIÓN
 def UpdatePatient(id, cedula, image, name, lastname, bloodtype, email, sex, birthdate, allergies, iddoctor):
     try:
+        sql = """UPDATE patient SET cedula = ?, image = ?, name = ?, lastname = ?, bloodtype = ?, email = ?, sex = ?, birthdate = ?, allergies = ?, iddoctor = ? WHERE id = ?"""
         connection = Connection()
-        myCursor = connection.cursor()
-        sql = """UPDATE patient SET cedula = %s, image = %s, name = %s, lastname = %s, bloodtype = %s, email = %s, sex = %s, birthdate = %s, allergies = %s, iddoctor = %s WHERE id = %s"""
-        values = (cedula, image, name, lastname, bloodtype, email, sex, birthdate, allergies, iddoctor, id)
-        myCursor.execute(sql, values)
-        connection.commit()
-        return 1
+        with connection:
+            myCursor = connection.cursor()
+            values = (cedula, image, name, lastname, bloodtype, email, sex, birthdate, allergies, iddoctor, id)
+            myCursor.execute(sql, values)
+            connection.commit()
+            return 1
     except:
         return 0
 
 #ELIMINACIÓN
 def DeletePatient(id):
     try:
-        connection = Connection()
-        myCursor = connection.cursor()
         sql = f"""DELETE FROM patient WHERE id = {id}"""
-        myCursor.execute(sql)
-        connection.commit()
-        return 1
+        connection = Connection()
+        with connection:
+            myCursor = connection.cursor()
+            myCursor.execute(sql)
+            connection.commit()
+            return 1
     except:
         return 0
 
 #SELECCIÓN
 def SelectPatient(id, iddoctor):
     try:
-        connection = Connection()
-        myCursor = connection.cursor()
         sql = f"""SELECT * FROM patient WHERE id = {id} AND iddoctor = {iddoctor}"""
-        myCursor.execute(sql)
-        myResult = myCursor.fetchone()
-        return [1, myResult]
+        connection = Connection()
+        with connection:
+            myCursor = connection.cursor()
+            myCursor.execute(sql)
+            myResult = myCursor.fetchone()
+            return [1, myResult]
     except:
         return [0]
 
 #SELECCIÓN NOMBRE PACIENTES
 def SelectPatientsName(iddoctor):
     try:
-        connection = Connection()
-        myCursor = connection.cursor()
         sql = f"""SELECT name FROM patient WHERE iddoctor = {iddoctor}"""
-        myCursor.execute(sql)
-        myResult = myCursor.fetchall()
-        return [1, myResult]
+        connection = Connection()
+        with connection:
+            myCursor = connection.cursor()
+            myCursor.execute(sql)
+            myResult = myCursor.fetchall()
+            return [1, myResult]
     except:
         return 0
 
 #BUSCAR ID DEL PACIENTE
 def SearchPatientID(name, iddoctor):
     try:
-        connection = Connection()
-        myCursor = connection.cursor()
         sql = f"""SELECT id FROM patient WHERE name = '{name}' AND iddoctor = {iddoctor}"""
-        myCursor.execute(sql)
-        myResult = myCursor.fetchone()
-        myResult = myResult[0]
-        return [1, myResult]
+        connection = Connection()
+        with connection:
+            myCursor = connection.cursor()
+            myCursor.execute(sql)
+            myResult = myCursor.fetchone()
+            myResult = myResult[0]
+            return [1, myResult]
     except:
         return [0]
 
 #TABLA VISITA
 
-#CREACIÓN DE LA TABLA "visita"
-def CreateConsultTable():
-    try:
-        connection = Connection()
-        myCursor = connection.cursor()
-        sql = """
-                            CREATE TABLE IF NOT EXISTS consult (
-                                id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                                idpatient INT NOT NULL,
-                                date DATE NOT NULL,
-                                consultreason VARCHAR(200) NOT NULL,
-                                securitynumber VARCHAR(100) NOT NULL,
-                                amount DECIMAL(13,2) NOT NULL,
-                                diagnosis VARCHAR(100) NOT NULL,
-                                note VARCHAR(200) NOT NULL,
-                                image LONGBLOB,
-                                FOREIGN KEY (idpatient) REFERENCES patient(id)                    
-                            );
-        """
-        myCursor.execute(sql)
-    except:
-        print("Error")
-CreateConsultTable()
-
 #INSERCIÓN
 def InsertConsult(idpatient, date, consultreason, securitynumber, amount, diagnosis, note, image):
     try:
+        sql = """INSERT INTO consult (idpatient, date, consultreason, securitynumber, amount, diagnosis, note, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"""
         connection = Connection()
-        myCursor = connection.cursor()
-        sql = """INSERT INTO consult (idpatient, date, consultreason, securitynumber, amount, diagnosis, note, image) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"""
-        values = (idpatient, date, consultreason, securitynumber, amount, diagnosis, note, image)
-        myCursor.execute(sql, values)
-        connection.commit()
-        id = myCursor.lastrowid
-        return [1, id]
+        with connection:
+            myCursor = connection.cursor()
+            values = (idpatient, date, consultreason, securitynumber, amount, diagnosis, note, image)
+            myCursor.execute(sql, values)
+            connection.commit()
+            id = myCursor.lastrowid
+            return [1, id]
     except:
         return [0]
 
 #ACTUALIZACIÓN
 def UpdateConsult(id, idpatient, date, consultreason, securitynumber, amount, diagnosis, note, image):
     try:
+        sql = """UPDATE consult SET idpatient = ?, date = ?, consultreason = ?, securitynumber = ?, amount = ?, diagnosis = ?, note = ?, image = ? WHERE id = ?"""
         connection = Connection()
-        myCursor = connection.cursor()
-        sql = """UPDATE consult SET idpatient = %s, date = %s, consultreason = %s, securitynumber = %s, amount = %s, diagnosis = %s, note = %s, image = %s WHERE id = %s"""
-        values = (idpatient, date, consultreason, securitynumber, amount, diagnosis, note, image, id)
-        myCursor.execute(sql, values)
-        connection.commit()
-        return 1
+        with connection:
+            myCursor = connection.cursor()
+            values = (idpatient, date, consultreason, securitynumber, amount, diagnosis, note, image, id)
+            myCursor.execute(sql, values)
+            connection.commit()
+            return 1
     except:
         return 0
 
 #ELIMINACIÓN
 def DeleteConsult(id):
     try:
-        connection = Connection()
-        myCursor = connection.cursor()
         sql = f"""DELETE FROM consult WHERE id = {id}"""
-        myCursor.execute(sql)
-        connection.commit()
-        return 1
+        connection = Connection()
+        with connection:
+            myCursor = connection.cursor()
+            myCursor.execute(sql)
+            connection.commit()
+            return 1
     except:
         return 0
 
 #SELECCIÓN
 def SelectConsult(id, iddoctor):
     try:
-        connection = Connection()
-        myCursor = connection.cursor()
         sql = f"""
                 SELECT * FROM consult c
                 INNER JOIN patient p
@@ -302,9 +231,12 @@ def SelectConsult(id, iddoctor):
                 WHERE d.id = {iddoctor}
                 AND c.id = {id}
         """
-        myCursor.execute(sql)
-        myResult = myCursor.fetchone()
-        return [1, myResult]
+        connection = Connection()
+        with connection:
+            myCursor = connection.cursor()
+            myCursor.execute(sql)
+            myResult = myCursor.fetchone()
+            return [1, myResult]
     except:
         return [0]
 
@@ -325,32 +257,32 @@ def getZodiacalSign(date):
 #SELECCIÓN DE TABLAS
 def SELECT(tabla):
     try:
-        connection = Connection()
-        myCursor = connection.cursor()
         sql = f"""SELECT * FROM {tabla}"""
-        myCursor.execute(sql)
-        myResult = myCursor.fetchall()
-        return [1, myResult]
+        connection = Connection()
+        with connection:
+            myCursor = connection.cursor()
+            myCursor.execute(sql)
+            myResult = myCursor.fetchall()
+            return [1, myResult]
     except:
         return [0]
 
 #SELECCIÓN PACIENTES POR DOCTOR
 def SELECTpatient(iddoctor):
     try:
-        connection = Connection()
-        myCursor = connection.cursor()
         sql = f"""SELECT * FROM patient WHERE iddoctor = {iddoctor}"""
-        myCursor.execute(sql)
-        myResult = myCursor.fetchall()
-        return [1, myResult]
+        connection = Connection()
+        with connection:
+            myCursor = connection.cursor()
+            myCursor.execute(sql)
+            myResult = myCursor.fetchall()
+            return [1, myResult]
     except:
         return [0]
 
 #SELECCIÓN CONSULTAS POR DOCTOR
 def SELECTconsult(iddoctor):
     try:
-        connection = Connection()
-        myCursor = connection.cursor()
         sql = f"""
                 SELECT * FROM consult c
                 INNER JOIN patient p
@@ -359,9 +291,12 @@ def SELECTconsult(iddoctor):
                 ON d.id = p.iddoctor
                 WHERE d.id = {iddoctor}
                 """
-        myCursor.execute(sql)
-        myResult = myCursor.fetchall()
-        return [1, myResult]
+        connection = Connection()
+        with connection:
+            myCursor = connection.cursor()
+            myCursor.execute(sql)
+            myResult = myCursor.fetchall()
+            return [1, myResult]
     except:
         return [0]
 
@@ -370,44 +305,47 @@ def SELECTconsult(iddoctor):
 #VISITAS POR FECHA
 def ConsultsByDate(date, iddoctor):
     try:
-        connection = Connection()
-        myCursor = connection.cursor()
         sql = f"""
-                SELECT * FROM consult c
+                SELECT c.* FROM consult c
                 INNER JOIN patient p
                 ON p.id = c.idpatient
                 INNER JOIN doctor d
                 ON d.id = p.iddoctor
                 WHERE d.id = {iddoctor}
-                AND c.date = {date}
+                AND c.date = '{date}'
             """
-        myCursor.execute(sql)
-        myResult = myCursor.fetchall()
-        return [1, myResult]
+        connection = Connection()
+        with connection:
+            myCursor = connection.cursor()
+            myCursor.execute(sql)
+            myResult = myCursor.fetchall()
+            return [1, myResult]
     except:
         return [0]
 
 #REPORTE ZODIACAL
 def Zodiacal(iddoctor):
     try:
-        connection = Connection()
-        myCursor = connection.cursor()
         sql = f"""SELECT id, cedula, name, lastname, birthdate FROM patient WHERE iddoctor = {iddoctor}"""
-        myCursor.execute(sql)
-        myResult = myCursor.fetchall()
-        return [1, myResult]
+        connection = Connection()
+        with connection:
+            myCursor = connection.cursor()
+            myCursor.execute(sql)
+            myResult = myCursor.fetchall()
+            return [1, myResult]
     except:
         return [0]
 
 #REPORTE POR CANDITDAD DE VISITAS
 def ConsultsQuantity(iddoctor):
     try:
-        connection = Connection()
-        myCursor = connection.cursor()
         sql = f"""SELECT id, name, (SELECT COUNT(id) FROM consult c WHERE c.idpatient = p.id) FROM patient p WHERE iddoctor = {iddoctor}"""
-        myCursor.execute(sql)
-        myResult = myCursor.fetchall()
-        return [1, myResult]
+        connection = Connection()
+        with connection:
+            myCursor = connection.cursor()
+            myCursor.execute(sql)
+            myResult = myCursor.fetchall()
+            return [1, myResult]
     except:
         return [0]
 
@@ -415,13 +353,13 @@ def ConsultsQuantity(iddoctor):
 app = FastAPI()
 
 #ORÍGENES DESCONOCIDOS
-#app.add_middleware(
-#    CORSMiddleware,
-#    allow_origins=["*"],
-#    allow_credentials=True,
-#    allow_methods=["*"],
-#    allow_headers=["*"]
-#)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
 
 #MÉTODOS JSON
 
@@ -1232,5 +1170,6 @@ def _logOut():
             "ERROR": "FASTAPI ERROR"
         }
 
-if __name__ == "__main__":
-    uvicorn.run(app, host='0.0.0.0')
+def sorry():
+    pass
+print(sorry())

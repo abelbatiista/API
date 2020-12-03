@@ -3,9 +3,8 @@ import os, binascii
 import sqlite3
 from sqlite3 import Error
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+#from fastapi.middleware.cors import CORSMiddleware
 import pickle
-from datetime import date
 
 #GLOBALES
 LoGGEDIN = bool(False)
@@ -351,7 +350,7 @@ def ConsultsQuantity(iddoctor):
 
 #CREACION DEL OBJETO APP
 app = FastAPI()
-
+"""
 #ORÍGENES DESCONOCIDOS
 app.add_middleware(
     CORSMiddleware,
@@ -360,7 +359,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"]
 )
-
+"""
 #MÉTODOS JSON
 
 #POR DEFECTO
@@ -1169,7 +1168,3 @@ def _logOut():
         return {
             "ERROR": "FASTAPI ERROR"
         }
-
-def sorry():
-    pass
-print(sorry())

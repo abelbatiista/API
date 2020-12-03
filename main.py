@@ -3,8 +3,7 @@ import os, binascii
 import sqlite3
 from sqlite3 import Error
 from fastapi import FastAPI
-#from fastapi.middleware.cors import CORSMiddleware
-import pickle
+from starlette.middleware.cors import CORSMiddleware
 
 #GLOBALES
 ASaP = int(0)
@@ -365,7 +364,7 @@ def ConsultsQuantity(iddoctor):
 
 #CREACION DEL OBJETO APP
 app = FastAPI()
-"""
+
 #ORÍGENES DESCONOCIDOS
 app.add_middleware(
     CORSMiddleware,
@@ -374,7 +373,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"]
 )
-"""
+
 #MÉTODOS JSON
 
 #POR DEFECTO
